@@ -67,16 +67,24 @@ with server.auth.sign_in(tableau_auth):
 
             for connection in datasource_root.iter('connection'):
                 # Changing database
-                if connection.attrib['class'] == 'snowflake' and connection.attrib['dbname'] == 'CURRENT_DB_NAME_HERE':
-                    connection.attrib['dbname'] = 'NEW_DB_NAME_HERE'
-                    xfile._save_file(datasource_path, datasource_tree)
-                    datasource_name = item.split('.')[0]
-                    index = datasource_list.index(datasource_name)
-                    project_name = project_list[index].name
-                    # Publishing Datasource
-                    tsc_logic.publish_datasource(server, datasource_name, project_name, datasource_path, connection_credentials)
-                # elif connection.attrib['class'] == 'snowflake':
-                #     print(connection.attrib)
+                if connection.attrib['class'] == 'snowflake' and connection.attrib['dbname'] == 'OLD_DB_NAME':
+                    connection.attrib['dbname'] = 'NEW_DB_NAME'
+
+                    try:
+                        xfile._save_file(datasource_path, datasource_tree)
+                        datasource_name = item.split('.')[0]
+                        index = datasource_list.index(datasource_name)
+                        project_name = project_list[index].name
+                        # Publishing Datasource
+                        tsc_logic.publish_datasource(server, datasource_name, project_name, datasource_path, connection_credentials)  
+                    except OSError:
+                        print("Failed to save and publish datasource:", datasource_name)
+
+                # This will log a list of any Snowflake connections that are using a different server/dbname
+                elif connection.attrib['class'] == 'snowflake':
+                    print(item.split('.')[0], "is connected to this db: \n", connection.attrib['server'], connection.attrib['dbname'])
+
+                    
 
     # Deleting tempdir
     cleanup('DownloadedFiles/')
