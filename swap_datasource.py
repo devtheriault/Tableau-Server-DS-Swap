@@ -11,17 +11,24 @@ from tableaudocumentapi import Datasource
 datasource_list = []
 project_id_list = []
 project_list = []
-# Tableau Server credentials
+
+# dbnames
+old_dbname = 'OLD_DBNAME'
+new_dbname = 'NEW_DBNAME'
+
+# Tableau Server credentials URL format: 'https://tableau.servername.com/', site format: 'site-name'
 tableau_server_url = 'TABLEAU_SERVER_URL'
 tableau_server_username = 'TABLEAU_SERVER_USERNAME'
 tableau_server_password = 'TABLEAU_SERVER_PASSWORD'
 tableau_server_site = 'TABLEAU_SERVER_SITE'
 
+# Snowflake credentials
+snowflake_username = 'SNOWFLAKE_USERNAME'
+snowflake_password = 'SNOWFLAKE_PASSWORD'
 
 tableau_auth = TSC.TableauAuth(tableau_server_username, tableau_server_password, tableau_server_site)
 server = TSC.Server(tableau_server_url)
-# Snowflake credentials
-connection_credentials = TSC.ConnectionCredentials('SNOWFLAKE_USERNAME', 'SNOWFLAKE_PASSWORD', embed=True)
+connection_credentials = TSC.ConnectionCredentials(snowflake_username, snowflake_password, embed=True)
 
 def create_temp_dir():
     try:
@@ -33,6 +40,17 @@ def create_temp_dir():
 
 def cleanup(tempdir):
     shutil.rmtree(tempdir)
+
+def publish_datasource():
+    try:
+        xfile._save_file(datasource_path, datasource_tree)
+        datasource_name = item.split('.')[0]
+        index = datasource_list.index(datasource_name)
+        project_name = project_list[index].name
+        # Publishing Datasource
+        tsc_logic.publish_datasource(server, datasource_name, project_name, datasource_path, connection_credentials)
+    except OSError:
+        print("Failed to save and publish datasource:", datasource_name)
 
 with server.auth.sign_in(tableau_auth):
 
@@ -67,24 +85,20 @@ with server.auth.sign_in(tableau_auth):
 
             for connection in datasource_root.iter('connection'):
                 # Changing database
-                if connection.attrib['class'] == 'snowflake' and connection.attrib['dbname'] == 'OLD_DB_NAME':
-                    connection.attrib['dbname'] = 'NEW_DB_NAME'
+                if connection.attrib['class'] == 'snowflake' and connection.attrib['dbname'] == old_dbname and old_dbname in connection.attrib['one-time-sql']:
+                    connection.attrib['dbname'] = new_dbname
+                    connection.attrib['one-time-sql'].replace(old_dbname, new_dbname)
 
-                    try:
-                        xfile._save_file(datasource_path, datasource_tree)
-                        datasource_name = item.split('.')[0]
-                        index = datasource_list.index(datasource_name)
-                        project_name = project_list[index].name
-                        # Publishing Datasource
-                        tsc_logic.publish_datasource(server, datasource_name, project_name, datasource_path, connection_credentials)  
-                    except OSError:
-                        print("Failed to save and publish datasource:", datasource_name)
+                    publish_datasource()
+
+                elif connection.attrib['class'] == 'snowflake' and connection.attrib['dbname'] == old_dbname:
+                    connection.attrib['dbname'] = new_dbname
+
+                    publish_datasource()
 
                 # This will log a list of any Snowflake connections that are using a different server/dbname
                 elif connection.attrib['class'] == 'snowflake':
                     print(item.split('.')[0], "is connected to this db: \n", connection.attrib['server'], connection.attrib['dbname'])
-
-                    
 
     # Deleting tempdir
     cleanup('DownloadedFiles/')
