@@ -11,20 +11,21 @@ from tableaudocumentapi import Datasource
 datasource_list = []
 project_id_list = []
 project_list = []
+changed_datasources = []
 
 # dbnames
-old_dbname = 'OLD_DBNAME'
-new_dbname = 'NEW_DBNAME'
+old_dbname = ''
+new_dbname = ''
 
-# Tableau Server credentials URL format: 'https://tableau.servername.com/', site format: 'site-name'
-tableau_server_url = 'TABLEAU_SERVER_URL'
-tableau_server_username = 'TABLEAU_SERVER_USERNAME'
-tableau_server_password = 'TABLEAU_SERVER_PASSWORD'
-tableau_server_site = 'TABLEAU_SERVER_SITE'
+# Tableau Server credentials URL format: 'https://tableau.servername.com/', site format: 'site-name' 'aams-athlete360'
+tableau_server_url = ''
+tableau_server_username = ''
+tableau_server_password = ''
+tableau_server_site = ''
 
 # Snowflake credentials
-snowflake_username = 'SNOWFLAKE_USERNAME'
-snowflake_password = 'SNOWFLAKE_PASSWORD'
+snowflake_username = ''
+snowflake_password = ''
 
 tableau_auth = TSC.TableauAuth(tableau_server_username, tableau_server_password, tableau_server_site)
 server = TSC.Server(tableau_server_url)
@@ -88,13 +89,17 @@ with server.auth.sign_in(tableau_auth):
                 if connection.attrib['class'] == 'snowflake' and connection.attrib['dbname'] == old_dbname and old_dbname in connection.attrib['one-time-sql']:
                     connection.attrib['dbname'] = new_dbname
                     connection.attrib['one-time-sql'].replace(old_dbname, new_dbname)
+                    connection.attrib['username'] = snowflake_username
 
                     publish_datasource()
+                    changed_datasources.append(item.split('.')[0])
 
                 elif connection.attrib['class'] == 'snowflake' and connection.attrib['dbname'] == old_dbname:
                     connection.attrib['dbname'] = new_dbname
+                    connection.attrib['username'] = snowflake_username
 
                     publish_datasource()
+                    changed_datasources.append(item.split('.')[0])
 
                 # This will log a list of any Snowflake connections that are using a different server/dbname
                 elif connection.attrib['class'] == 'snowflake':
@@ -102,3 +107,9 @@ with server.auth.sign_in(tableau_auth):
 
     # Deleting tempdir
     cleanup('DownloadedFiles/')
+
+    print('\n')
+
+    # print edited datasources
+    for ds in changed_datasources:
+        print(ds)
