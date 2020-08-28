@@ -17,7 +17,7 @@ changed_datasources = []
 old_dbname = ''
 new_dbname = ''
 
-# Tableau Server credentials URL format: 'https://tableau.servername.com/', site format: 'site-name' 'aams-athlete360'
+# Tableau Server credentials URL format: 'https://tableau.servername.com/', site format: 'site-name' 'site-name'
 tableau_server_url = ''
 tableau_server_username = ''
 tableau_server_password = ''
