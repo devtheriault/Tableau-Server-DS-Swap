@@ -31,9 +31,9 @@ tableau_auth = TSC.TableauAuth(tableau_server_username, tableau_server_password,
 server = TSC.Server(tableau_server_url)
 connection_credentials = TSC.ConnectionCredentials(snowflake_username, snowflake_password, embed=True)
 
-def create_temp_dir():
+def create_dir(path):
     try:
-        os.mkdir(os.getcwd() + "/DownloadedFiles/")
+        os.mkdir(os.getcwd() + path)
     except OSError:
         print("Failed to create directory")
     else:
@@ -41,6 +41,9 @@ def create_temp_dir():
 
 def cleanup(tempdir):
     shutil.rmtree(tempdir)
+
+def copy_dir(temp_dir, backup_dir):
+    shutil.copytree(temp_dir, backup_dir)
 
 def publish_datasource():
     try:
@@ -65,10 +68,16 @@ with server.auth.sign_in(tableau_auth):
     for project in project_id_list:
         project_list.append(tsc_logic.select_a_project_with_id(server, project))
 
-    create_temp_dir()
+    create_dir("/DownloadedFiles/")
 
     # Downloading all datasources from Tableau Server to /DownloadedFiles/ dir
     tsc_logic.download_datasource_list(server, datasource_list)
+
+    # Creating datasource back up 
+    if os.path.exists("InCaseOfEmergencyBreakGlass/"):
+        pass
+    else:
+        copy_dir("DownloadedFiles/", "InCaseOfEmergencyBreakGlass/")
 
     # Creating a list of files from each file in /DownloadedFiles/ dir
     for dirpath, dirnames, files in os.walk(os.getcwd() + "/DownloadedFiles/"):
@@ -111,5 +120,9 @@ with server.auth.sign_in(tableau_auth):
     print('\n')
 
     # print edited datasources
-    for ds in changed_datasources:
-        print(ds)
+    if len(changed_datasources) > 0:
+        print("Edited Data Sources:")
+        for ds in changed_datasources:
+            print(ds)
+    else:
+        print("No data sources were edited")
