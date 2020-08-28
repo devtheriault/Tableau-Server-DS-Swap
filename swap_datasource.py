@@ -17,8 +17,7 @@ changed_datasources = []
 old_dbname = ''
 new_dbname = ''
 
-# Tableau Server credentials URL format: 'https://tableau.servername.com/', site format: 'site-name' 'site-name'
-tableau_server_url = ''
+# Tableau Server credentials URL format: 'https://tableau.servername.com/', site format: 'site-name'
 tableau_server_username = ''
 tableau_server_password = ''
 tableau_server_site = ''
