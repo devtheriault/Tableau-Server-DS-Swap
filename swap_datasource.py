@@ -26,6 +26,7 @@ tableau_server_site = ''
 # Snowflake credentials
 snowflake_username = ''
 snowflake_password = ''
+snowflake_role = ''
 
 tableau_auth = TSC.TableauAuth(tableau_server_username, tableau_server_password, tableau_server_site)
 server = TSC.Server(tableau_server_url)
@@ -99,6 +100,7 @@ with server.auth.sign_in(tableau_auth):
                     connection.attrib['dbname'] = new_dbname
                     connection.attrib['one-time-sql'].replace(old_dbname, new_dbname)
                     connection.attrib['username'] = snowflake_username
+                    connection.attrib['service'] = snowflake_role
 
                     publish_datasource()
                     changed_datasources.append(item.split('.')[0])
@@ -106,6 +108,7 @@ with server.auth.sign_in(tableau_auth):
                 elif connection.attrib['class'] == 'snowflake' and connection.attrib['dbname'] == old_dbname:
                     connection.attrib['dbname'] = new_dbname
                     connection.attrib['username'] = snowflake_username
+                    connection.attrib['service'] = snowflake_role
 
                     publish_datasource()
                     changed_datasources.append(item.split('.')[0])
